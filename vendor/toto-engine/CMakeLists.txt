@@ -12,9 +12,10 @@ file(GLOB SOURCES ${SRC_DIR}/*.cpp)
 find_package(glfw3 REQUIRED)
 find_package(OpenGL REQUIRED)
 add_subdirectory(vendor/glad)
+find_package(glm REQUIRED)
 
 add_library(toto-engine ${SOURCES})
 
 target_include_directories(toto-engine PUBLIC include)
 
-target_link_libraries(toto-engine PUBLIC glfw OpenGL glad)
+target_link_libraries(toto-engine PUBLIC glfw OpenGL glad glm)

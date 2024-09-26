@@ -5,7 +5,14 @@
 
 namespace toto {
 
-template <GLsizei N = 1>
+enum class GLBufferTarget {
+    Array = GL_ARRAY_BUFFER,
+    ElementArray = GL_ELEMENT_ARRAY_BUFFER,
+    Uniform = GL_UNIFORM_BUFFER,
+    ShaderStorage = GL_SHADER_STORAGE_BUFFER
+};
+
+template <GLBufferTarget TARGET, GLsizei N = 1>
 class GLBuffer : public GLPointerArray<
                      [](GLsizei n, GLuint* buffers) { glGenBuffers(n, buffers); },
                      [](GLsizei n, GLuint* buffers) { glDeleteBuffers(n, buffers); }, N> {
@@ -15,15 +22,15 @@ public:
     GLBuffer(GLBuffer&&) = default;
     GLBuffer& operator=(GLBuffer&&) = default;
 
-    inline static void bind(GLenum target, const GLBuffer& buffer) { glBindBuffer(target, buffer.handle()); }
-    inline static void unbind(GLenum target) { glBindBuffer(target, 0); }
+    inline static void bind(const GLBuffer& buffer) { glBindBuffer(static_cast<GLenum>(TARGET), buffer.handle()); }
+    inline static void unbind() { glBindBuffer(static_cast<GLenum>(TARGET), 0); }
 
-    inline void bind(GLenum target) const { bind(target, *this); }
+    inline void bind() const { bind(*this); }
 
     template <typename T>
-    void data(GLenum target, const std::vector<T>& data, GLenum usage) const {
-        bind(target, *this);
-        glBufferData(target, data.size() * sizeof(T), data.data(), usage);
+    void data(const std::vector<T>& data, GLenum usage) const {
+        bind(*this);
+        glBufferData(static_cast<GLenum>(TARGET), data.size() * sizeof(T), data.data(), usage);
     }
 };
 
@@ -77,7 +84,7 @@ public:
      * @param index
      */
     template <typename VAOType, typename VecType, size_t OFFSET>
-    void setVertexAttrib(GLuint index) const {
+    void setAttribPointer(GLuint index) const {
         bind();
         glEnableVertexAttribArray(index);
         glVertexAttribPointer(index, VecType::length(), GL_FLOAT, GL_FALSE, sizeof(VAOType), (void*)OFFSET);

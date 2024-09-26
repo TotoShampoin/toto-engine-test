@@ -1,4 +1,5 @@
 #include "toto-engine/gl/glresources.hpp"
+#include "toto-engine/import-gl.hpp"
 #include <glm/glm.hpp>
 #include <string>
 #include <sys/types.h>
@@ -51,17 +52,17 @@ void main() {
     frag_color = vec4(frag_normal, 1.0);
 })glsl";
 
-    auto vbo = GLBuffer();
+    auto vbo = GLBuffer<GLBufferTarget::Array>();
     auto vao = GLVertexArray();
-    auto ibo = GLBuffer();
-    vbo.bind(GL_ARRAY_BUFFER);
-    vbo.data(GL_ARRAY_BUFFER, vertices, GL_STATIC_DRAW);
+    auto ibo = GLBuffer<GLBufferTarget::ElementArray>();
+    vbo.bind();
+    vbo.data(vertices, GL_STATIC_DRAW);
     vao.bind();
-    vao.setVertexAttrib<Vertex, glm::vec3, offsetof(Vertex, position)>(0);
-    vao.setVertexAttrib<Vertex, glm::vec3, offsetof(Vertex, normal)>(1);
-    vao.setVertexAttrib<Vertex, glm::vec2, offsetof(Vertex, texcoord)>(2);
-    ibo.bind(GL_ELEMENT_ARRAY_BUFFER);
-    ibo.data(GL_ELEMENT_ARRAY_BUFFER, indices, GL_STATIC_DRAW);
+    vao.setAttribPointer<Vertex, glm::vec3, offsetof(Vertex, position)>(0);
+    vao.setAttribPointer<Vertex, glm::vec3, offsetof(Vertex, normal)>(1);
+    vao.setAttribPointer<Vertex, glm::vec2, offsetof(Vertex, texcoord)>(2);
+    ibo.bind();
+    ibo.data(indices, GL_STATIC_DRAW);
 
     auto vertex_shader = GLShader<GLShaderType::Vertex>();
     vertex_shader.source(vertex_shader_source);
@@ -77,6 +78,11 @@ void main() {
 
     while (!window.shouldClose()) {
         glClear(GL_COLOR_BUFFER_BIT);
+
+        vbo.bind();
+        program.use();
+        glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, nullptr);
+
         window.swapBuffers();
         window.pollEvents();
     }

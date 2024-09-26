@@ -2,6 +2,7 @@
 #include "glpointer.hpp"
 #include <stdexcept>
 #include <string>
+#include <vector>
 
 namespace toto {
 
@@ -19,11 +20,6 @@ class GLShader : public GLPointer<
                      []() { return glCreateShader(static_cast<GLenum>(SHADER_TYPE)); },
                      [](GLuint shader) { glDeleteShader(shader); }> {
 public:
-    GLShader() = default;
-    ~GLShader() = default;
-    GLShader(GLShader&&) = default;
-    GLShader& operator=(GLShader&&) = default;
-
     inline void source(const std::string& source) const {
         const char* c_source = source.c_str();
         glShaderSource(this->handle(), 1, &c_source, nullptr);
@@ -44,11 +40,6 @@ public:
 class GLProgram
     : public GLPointer<[]() { return glCreateProgram(); }, [](GLuint program) { glDeleteProgram(program); }> {
 public:
-    GLProgram() = default;
-    ~GLProgram() = default;
-    GLProgram(GLProgram&&) = default;
-    GLProgram& operator=(GLProgram&&) = default;
-
     template <GLShaderType SHADER_TYPE>
     void attachShader(const GLShader<SHADER_TYPE>& shader) const {
         glAttachShader(this->handle(), shader.handle());

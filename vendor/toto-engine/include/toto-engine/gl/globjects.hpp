@@ -17,11 +17,6 @@ class GLBuffer : public GLPointerArray<
                      [](GLsizei n, GLuint* buffers) { glGenBuffers(n, buffers); },
                      [](GLsizei n, GLuint* buffers) { glDeleteBuffers(n, buffers); }, N> {
 public:
-    GLBuffer() = default;
-    ~GLBuffer() = default;
-    GLBuffer(GLBuffer&&) = default;
-    GLBuffer& operator=(GLBuffer&&) = default;
-
     inline static void bind(const GLBuffer& buffer) { glBindBuffer(static_cast<GLenum>(TARGET), buffer.handle()); }
     inline static void unbind() { glBindBuffer(static_cast<GLenum>(TARGET), 0); }
 
@@ -39,11 +34,6 @@ class GLVertexArray : public GLPointerArray<
                           [](GLsizei n, GLuint* arrays) { glGenVertexArrays(n, arrays); },
                           [](GLsizei n, GLuint* arrays) { glDeleteVertexArrays(n, arrays); }, N> {
 public:
-    GLVertexArray() = default;
-    ~GLVertexArray() = default;
-    GLVertexArray(GLVertexArray&&) = default;
-    GLVertexArray& operator=(GLVertexArray&&) = default;
-
     inline static void bind(const GLVertexArray& array) { glBindVertexArray(array.handle()); }
     inline static void unbind() { glBindVertexArray(0); }
 

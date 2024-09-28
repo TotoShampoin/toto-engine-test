@@ -25,12 +25,14 @@ struct Model {
 };
 struct Material {
     glm::vec3 albedo;
+    float alpha;
     float metallic;
     float roughness;
     float ao;
     glm::vec3 emissive;
 
     std::optional<std::reference_wrapper<GLTexture2D>> albedo_map;
+    std::optional<std::reference_wrapper<GLTexture2D>> alpha_map;
     std::optional<std::reference_wrapper<GLTexture2D>> metallic_map;
     std::optional<std::reference_wrapper<GLTexture2D>> roughness_map;
     std::optional<std::reference_wrapper<GLTexture2D>> ao_map;

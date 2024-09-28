@@ -95,15 +95,19 @@ public:
         glTexParameteri(static_cast<GLenum>(TARGET), parameter, value);
     }
 
-    template <GLenum INTERNAL_FORMAT, GLenum FORMAT, GLenum TYPE>
-    void image2D(GLint level, GLsizei width, GLsizei height, const void* data) const {
+    void image2D(
+        GLint level, GLint internal_format, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type,
+        const void* data
+    ) const {
         bind(*this);
-        glTexImage2D(static_cast<GLenum>(TARGET), level, INTERNAL_FORMAT, width, height, 0, FORMAT, TYPE, data);
+        glTexImage2D(static_cast<GLenum>(TARGET), level, internal_format, width, height, border, format, type, data);
     }
 
-    template <GLenum INTERNAL_FORMAT, GLenum FORMAT, typename TYPE>
-    void image2D(GLint level, GLsizei width, GLsizei height, const std::vector<TYPE> data) const {
-        constexpr GLenum type = [&] {
+    template <typename TYPE>
+    void image2D(
+        GLint level, GLint internal_format, GLsizei width, GLsizei height, GLenum format, const std::vector<TYPE>& data
+    ) const {
+        constexpr GLenum type = []() {
             if constexpr (std::is_same_v<TYPE, GLubyte>) {
                 return GL_UNSIGNED_BYTE;
             } else if constexpr (std::is_same_v<TYPE, GLushort>) {
@@ -121,8 +125,8 @@ public:
             } else {
                 static_assert(false, "Invalid type");
             }
-        };
-        image2D<INTERNAL_FORMAT, FORMAT, type>(level, width, height, reinterpret_cast<const void*>(data.data()));
+        }();
+        image2D(level, internal_format, width, height, 0, format, type, reinterpret_cast<const void*>(data.data()));
     }
 };
 

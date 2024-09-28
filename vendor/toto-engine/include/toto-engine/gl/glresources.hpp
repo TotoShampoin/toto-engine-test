@@ -126,4 +126,6 @@ public:
     }
 };
 
+using GLTexture2D = GLTexture<GLTextureTarget::Texture2D>;
+
 } // namespace toto

@@ -1,5 +1,6 @@
 #include "toto-engine/gl/glresources.hpp"
 #include "toto-engine/import-gl.hpp"
+#include "toto-engine/mesh.hpp"
 #include <glm/glm.hpp>
 #include <string>
 #include <sys/types.h>
@@ -8,12 +9,6 @@
 #include <vector>
 
 using namespace toto;
-
-struct Vertex {
-    glm::vec3 position;
-    glm::vec3 normal;
-    glm::vec2 texcoord;
-};
 
 int main(int argc, const char* argv[]) {
     auto window = Window(800, 600, "Hello, World!");
@@ -52,17 +47,7 @@ void main() {
     frag_color = vec4(frag_normal, 1.0);
 })glsl";
 
-    auto vbo = GLBuffer<GLBufferTarget::Array>();
-    auto vao = GLVertexArray();
-    auto ibo = GLBuffer<GLBufferTarget::ElementArray>();
-    vbo.bind();
-    vbo.data(vertices, GL_STATIC_DRAW);
-    vao.bind();
-    vao.setAttribPointer<Vertex, glm::vec3, offsetof(Vertex, position)>(0);
-    vao.setAttribPointer<Vertex, glm::vec3, offsetof(Vertex, normal)>(1);
-    vao.setAttribPointer<Vertex, glm::vec2, offsetof(Vertex, texcoord)>(2);
-    ibo.bind();
-    ibo.data(indices, GL_STATIC_DRAW);
+    auto model = Model(vertices, indices);
 
     auto vertex_shader = GLShader<GLShaderType::Vertex>();
     vertex_shader.source(vertex_shader_source);
@@ -79,7 +64,7 @@ void main() {
     while (!window.shouldClose()) {
         glClear(GL_COLOR_BUFFER_BIT);
 
-        vbo.bind();
+        model.vbo.bind();
         program.use();
         glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, nullptr);
 

@@ -65,30 +65,22 @@ Model cube(float width, float height, float depth) {
 Model sphere(float radius, uint slices, uint stacks) {
     auto vertices = std::vector<Vertex>();
     auto indices = std::vector<uint>();
-    // top pole
-    vertices.push_back({
-        {0.0f, radius, 0.0f},
-        {0.0f, 1.0f, 0.0f},
-        {0.5f, 1.0f}
-    });
-    for (uint i = 1; i < stacks; i++) {
+    for (uint i = 0; i < stacks; i++) {
         float theta = glm::pi<float>() * i / stacks;
         for (uint j = 0; j < slices; j++) {
             float phi = 2 * glm::pi<float>() * j / slices;
+
+            float x = glm::sin(theta) * glm::cos(phi);
+            float y = glm::cos(theta);
+            float z = glm::sin(theta) * glm::sin(phi);
+
             vertices.push_back({
-                {radius * glm::sin(theta) * glm::cos(phi), radius * glm::cos(theta),
-                 radius * glm::sin(theta) * glm::sin(phi)},
-                {glm::sin(theta) * glm::cos(phi), glm::cos(theta), glm::sin(theta) * glm::sin(phi)},
+                glm::vec3(x, y, z) * radius,
+                glm::vec3(x, y, z),
                 {j / static_cast<float>(slices), i / static_cast<float>(stacks)}
             });
         }
     }
-    // bottom pole
-    vertices.push_back({
-        {0.0f, -radius, 0.0f},
-        {0.0f, -1.0f, 0.0f},
-        {0.5f, 0.0f}
-    });
     for (uint i = 1; i < stacks; i++) {
         for (uint j = 0; j < slices; j++) {
             indices.push_back((i - 1) * slices + j + 1);
@@ -195,29 +187,43 @@ Model cone(float radius, float height, uint slices) {
     return Model {vertices, indices};
 }
 
+// https://github.com/mrdoob/three.js/blob/dev/src/geometries/TorusGeometry.js
 Model torus(float major_radius, float minor_radius, uint major_slices, uint minor_slices) {
     auto vertices = std::vector<Vertex>();
     auto indices = std::vector<uint>();
-    for (uint i = 0; i <= major_slices; i++) {
-        float phi = 2 * glm::pi<float>() * i / major_slices;
-        for (uint j = 0; j <= minor_slices; j++) {
-            float theta = 2 * glm::pi<float>() * j / minor_slices;
-            vertices.push_back({
-                {(major_radius + minor_radius * glm::cos(theta)) * glm::cos(phi), minor_radius * glm::sin(theta),
-                 (major_radius + minor_radius * glm::cos(theta)) * glm::sin(phi)},
-                {glm::cos(phi) * glm::cos(theta), glm::sin(theta), glm::sin(phi) * glm::cos(theta)},
-                {j / static_cast<float>(minor_slices), i / static_cast<float>(major_slices)}
-            });
+    glm::vec3 vertex = {0.0f, 0.0f, 0.0f};
+    glm::vec3 center = {0.0f, 0.0f, 0.0f};
+    glm::vec3 normal = {0.0f, 0.0f, 0.0f};
+    for (int j = 0; j <= minor_slices; j++) {
+        float v = j / static_cast<float>(minor_slices) * 2 * glm::pi<float>();
+        for (int i = 0; i <= major_slices; i++) {
+            float u = i / static_cast<float>(major_slices) * 2 * glm::pi<float>();
+
+            vertex.x = (major_radius + minor_radius * glm::cos(v)) * glm::cos(u);
+            vertex.y = minor_radius * glm::sin(v);
+            vertex.z = (major_radius + minor_radius * glm::cos(v)) * glm::sin(u);
+
+            center.x = major_radius * glm::cos(u);
+            center.z = major_radius * glm::sin(u);
+            normal = glm::normalize(vertex - center);
+
+            glm::vec2 texcoord = {i / static_cast<float>(major_slices), j / static_cast<float>(minor_slices)};
+
+            vertices.push_back({vertex, normal, texcoord});
         }
     }
-    for (uint i = 0; i < major_slices; i++) {
-        for (uint j = 0; j < minor_slices; j++) {
-            indices.push_back(i * (minor_slices + 1) + j);
-            indices.push_back((i + 1) * (minor_slices + 1) + j);
-            indices.push_back(i * (minor_slices + 1) + j + 1);
-            indices.push_back(i * (minor_slices + 1) + j + 1);
-            indices.push_back((i + 1) * (minor_slices + 1) + j);
-            indices.push_back((i + 1) * (minor_slices + 1) + j + 1);
+    for (int j = 1; j <= minor_slices; j++) {
+        for (int i = 1; i <= major_slices; i++) {
+            int a = (major_slices + 1) * j + i - 1;
+            int b = (major_slices + 1) * (j - 1) + i - 1;
+            int c = (major_slices + 1) * (j - 1) + i;
+            int d = (major_slices + 1) * j + i;
+            indices.push_back(a);
+            indices.push_back(b);
+            indices.push_back(d);
+            indices.push_back(b);
+            indices.push_back(c);
+            indices.push_back(d);
         }
     }
     return Model {vertices, indices};

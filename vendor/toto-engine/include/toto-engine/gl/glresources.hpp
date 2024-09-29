@@ -98,6 +98,7 @@ public:
     inline static void unbind() { glBindTexture(static_cast<GLenum>(TARGET), 0); }
 
     inline void bind() const { bind(*this); }
+    inline void active(uint index) const { glActiveTexture(GL_TEXTURE0 + index); }
 
     void parameter(GLenum parameter, GLint value) const {
         bind(*this);
@@ -117,89 +118,6 @@ public:
     ) {
         bind(*this);
         glTexImage3D(target, level, internal_format, width, height, depth, border, format, type, data);
-    }
-
-    void image2D(
-        GLint level, GLint internal_format, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type,
-        const void* data
-    ) const {
-        if constexpr (TARGET != GLTextureTarget::Texture2D || TARGET != GLTextureTarget::TextureRectangle ||
-                      TARGET != GLTextureTarget::Texture1DArray) {
-            static_assert(false, "Invalid texture type");
-        }
-        image2D(static_cast<GLenum>(TARGET), level, internal_format, width, height, border, format, type, data);
-    }
-    void image2D(
-        GLTextureCubemapTarget target, GLint level, GLint internal_format, GLsizei width, GLsizei height, GLint border,
-        GLenum format, GLenum type, const void* data
-    ) {
-        if (TARGET != GLTextureTarget::TextureCubeMap) {
-            static_assert(false, "Invalid texture type");
-        }
-        image2D(static_cast<GLenum>(target), level, internal_format, width, height, border, format, type, data);
-    }
-    template <typename TYPE>
-    void image2D(
-        GLint level, GLint internal_format, GLsizei width, GLsizei height, GLenum format, const std::vector<TYPE>& data
-    ) const {
-        constexpr GLenum type = []() {
-            if constexpr (std::is_same_v<TYPE, GLubyte>) {
-                return GL_UNSIGNED_BYTE;
-            } else if constexpr (std::is_same_v<TYPE, GLushort>) {
-                return GL_UNSIGNED_SHORT;
-            } else if constexpr (std::is_same_v<TYPE, GLuint>) {
-                return GL_UNSIGNED_INT;
-            } else if constexpr (std::is_same_v<TYPE, GLbyte>) {
-                return GL_BYTE;
-            } else if constexpr (std::is_same_v<TYPE, GLshort>) {
-                return GL_SHORT;
-            } else if constexpr (std::is_same_v<TYPE, GLint>) {
-                return GL_INT;
-            } else if constexpr (std::is_same_v<TYPE, GLfloat>) {
-                return GL_FLOAT;
-            } else {
-                static_assert(false, "Invalid type");
-            }
-        }();
-        image2D(level, internal_format, width, height, 0, format, type, reinterpret_cast<const void*>(data.data()));
-    }
-
-    void image3D(
-        GLint level, GLint internal_format, GLsizei width, GLsizei height, GLsizei depth, GLint border, GLenum format,
-        GLenum type, const void* data
-    ) const {
-        if constexpr (TARGET != GLTextureTarget::Texture3D || TARGET != GLTextureTarget::Texture2DArray) {
-            static_assert(false, "Invalid texture type");
-        }
-        image3D(static_cast<GLenum>(TARGET), level, internal_format, width, height, depth, border, format, type, data);
-    }
-    template <typename TYPE>
-    void image3D(
-        GLint level, GLint internal_format, GLsizei width, GLsizei height, GLsizei depth, GLenum format,
-        const std::vector<TYPE>& data
-    ) const {
-        constexpr GLenum type = []() {
-            if constexpr (std::is_same_v<TYPE, GLubyte>) {
-                return GL_UNSIGNED_BYTE;
-            } else if constexpr (std::is_same_v<TYPE, GLushort>) {
-                return GL_UNSIGNED_SHORT;
-            } else if constexpr (std::is_same_v<TYPE, GLuint>) {
-                return GL_UNSIGNED_INT;
-            } else if constexpr (std::is_same_v<TYPE, GLbyte>) {
-                return GL_BYTE;
-            } else if constexpr (std::is_same_v<TYPE, GLshort>) {
-                return GL_SHORT;
-            } else if constexpr (std::is_same_v<TYPE, GLint>) {
-                return GL_INT;
-            } else if constexpr (std::is_same_v<TYPE, GLfloat>) {
-                return GL_FLOAT;
-            } else {
-                static_assert(false, "Invalid type");
-            }
-        }();
-        image3D(
-            level, internal_format, width, height, depth, 0, format, type, reinterpret_cast<const void*>(data.data())
-        );
     }
 };
 

@@ -7,6 +7,8 @@ namespace toto {
 
 class Uniform {
 public:
+    Uniform()
+        : _handle(0) {}
     Uniform(const GLProgram& program, const std::string& name) {
         _handle = glGetUniformLocation(program.handle(), name.c_str());
     }
@@ -31,6 +33,12 @@ public:
     void set(const glm::mat4x2& value) const { glUniformMatrix4x2fv(_handle, 1, GL_FALSE, &value[0][0]); }
     void set(const glm::mat3x4& value) const { glUniformMatrix3x4fv(_handle, 1, GL_FALSE, &value[0][0]); }
     void set(const glm::mat4x3& value) const { glUniformMatrix4x3fv(_handle, 1, GL_FALSE, &value[0][0]); }
+
+    void set(const GLTexture2D& texture, int unit) const {
+        glActiveTexture(GL_TEXTURE0 + unit);
+        texture.bind();
+        glUniform1i(_handle, unit);
+    }
 
 private:
     uint _handle;

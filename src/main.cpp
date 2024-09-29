@@ -1,5 +1,4 @@
-#include "toto-engine/loader/shader.hpp"
-#include "toto-engine/uniform.hpp"
+#include "toto-engine/utils/renderer.hpp"
 #include <GLFW/glfw3.h>
 #include <toto-engine/gl/globjects.hpp>
 #include <toto-engine/gl/glresources.hpp>
@@ -11,6 +10,10 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
+#include <backends/imgui_impl_glfw.h>
+#include <backends/imgui_impl_opengl3.h>
+#include <imgui.h>
+
 using namespace toto;
 
 int main(int argc, const char* argv[]) {
@@ -19,48 +22,49 @@ int main(int argc, const char* argv[]) {
 
     Window::initGL();
 
-    auto model = torus(1, .5, 96, 48);
+    Renderer renderer;
 
-    auto program = loadRenderShaderSource(pbrMaterialVertexShader(), pbrMaterialFragmentShader());
-    program.use();
+    renderer.useProgram();
 
-    auto u_model = Uniform(program, "u_model");
-    auto u_view = Uniform(program, "u_view");
-    auto u_projection = Uniform(program, "u_projection");
-
-    auto u_albedo = Uniform(program, "u_albedo");
-    auto u_roughness = Uniform(program, "u_roughness");
-    auto u_metallic = Uniform(program, "u_metallic");
-    auto u_ao = Uniform(program, "u_ao");
-    auto u_light_direction = Uniform(program, "u_light_direction");
-    auto u_light_color = Uniform(program, "u_light_color");
+    auto model = torus(1, .33333333, 96, 32);
+    auto material = Material {
+        .albedo = glm::vec3(1.0f, 0.5f, 0.0f),
+        .metallic = 1.0f,
+        .roughness = 0.25f,
+        .ao = 0.05f,
+    };
 
     glm::mat4 model_matrix = glm::rotate(glm::mat4(1.0f), glm::radians(30.0f), glm::vec3(1.0f, 0.0f, 0.0f));
     glm::mat4 view_matrix = glm::lookAt(glm::vec3(4.0f, 4.0f, 4.0f), glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
     glm::mat4 projection_matrix = glm::perspective(glm::radians(45.0f), 800.0f / 600.0f, 0.1f, 100.0f);
 
-    u_model.set(model_matrix);
-    u_view.set(view_matrix);
-    u_projection.set(projection_matrix);
+    glm::vec3 light_direction = glm::normalize(glm::vec3(1.0f, -1.0f, -1.0f));
+    glm::vec3 light_color = glm::vec3(1.0f, 1.0f, 1.0f);
 
-    u_albedo.set(glm::vec3(1.0f, 0.5f, 0.0f));
-    u_roughness.set(0.25f);
-    u_metallic.set(1.0f);
-    u_ao.set(0.05f);
-    u_light_direction.set(glm::normalize(glm::vec3(1.0f, -1.0f, -1.0f)));
-    u_light_color.set(glm::vec3(1.0f, 1.0f, 1.0f));
+    renderer.setModelMatrix(model_matrix);
+    renderer.setViewMatrix(view_matrix);
+    renderer.setProjectionMatrix(projection_matrix);
+    renderer.setMaterial(material);
+    renderer.setLight(light_direction, 1.0f, light_color);
 
     struct UserData {
-        Uniform& u_projection;
-    } data {u_projection};
+        Renderer& renderer;
+    } data {renderer};
     glfwSetWindowUserPointer(window.handle(), &data);
     glfwSetWindowSizeCallback(window.handle(), [](GLFWwindow* window, int width, int height) {
         auto& data = *static_cast<UserData*>(glfwGetWindowUserPointer(window));
-        data.u_projection.set(glm::perspective(glm::radians(45.0f), width / static_cast<float>(height), 0.1f, 100.0f));
+        data.renderer.setProjectionMatrix(
+            glm::perspective(glm::radians(45.0f), width / static_cast<float>(height), 0.1f, 100.0f)
+        );
         glViewport(0, 0, width, height);
     });
 
     glEnable(GL_DEPTH_TEST);
+
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGui_ImplGlfw_InitForOpenGL(window.handle(), true);
+    ImGui_ImplOpenGL3_Init("#version 460");
 
     auto start = glfwGetTime();
     auto last = start;
@@ -70,22 +74,43 @@ int main(int argc, const char* argv[]) {
         auto delta = now - last;
 
         auto time2 = time * 0.5f;
+        auto time3 = -time * 0.5f;
 
-        // model_matrix = glm::rotate<float>(model_matrix, glm::radians(90.0f) * delta, glm::vec3(0.0f, 1.0f, 0.0f));
-        // u_model.set(model_matrix);
-
+        model_matrix = glm::rotate<float>(glm::mat4(1.0f), time3, glm::vec3(1.0f, 0.0f, 0.0f));
+        light_direction = glm::normalize(glm::vec3(glm::cos(time2), glm::sin(time2), -1.0f));
         view_matrix = glm::lookAt(
-            glm::vec3(4.0f * glm::cos(time), 4.0f, 4.0f * glm::sin(time)), glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f)
+            glm::vec3(4.0f * glm::cos(time), 2.0f, 4.0f * glm::sin(time)), glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f)
         );
-        u_view.set(view_matrix);
+        renderer.setModelMatrix(model_matrix);
+        renderer.setViewMatrix(view_matrix);
 
-        u_light_direction.set(glm::normalize(glm::vec3(glm::cos(time2), -1.0f, glm::sin(time2))));
+        renderer.setMaterial(material);
+        renderer.setLight(light_direction, 1.0f, light_color);
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        model.vbo.bind();
-        program.use();
-        glDrawElements(GL_TRIANGLES, model.index_count, GL_UNSIGNED_INT, nullptr);
+        renderer.render(model);
+
+        //
+
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
+
+        ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_Always);
+        ImGui::Begin(
+            "Material", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_AlwaysAutoResize
+        );
+
+        ImGui::ColorEdit3("Albedo", &material.albedo.x);
+        ImGui::SliderFloat("Roughness", &material.roughness, 0.0f, 1.0f);
+        ImGui::SliderFloat("Metallic", &material.metallic, 0.0f, 1.0f);
+        ImGui::SliderFloat("AO", &material.ao, 0.0f, 1.0f);
+
+        ImGui::End();
+
+        ImGui::Render();
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
         window.swapBuffers();
         window.pollEvents();

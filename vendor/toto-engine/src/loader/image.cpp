@@ -8,7 +8,10 @@ namespace toto {
 Image2D<unsigned char> loadImage2D(const std::filesystem::path& path) {
     Image2D<unsigned char> image;
     stbi_set_flip_vertically_on_load(true);
-    auto data = stbi_load(path.c_str(), &image.width, &image.height, &image.channels, STBI_rgb_alpha);
+    auto data = stbi_load(path.c_str(), &image.width, &image.height, &image.channels, 0);
+    if (!data) {
+        throw std::runtime_error("Failed to load image");
+    }
     image.data.reserve(image.width * image.height * image.channels);
     image.data.insert(image.data.end(), data, data + image.width * image.height * image.channels);
     return image;
@@ -17,7 +20,10 @@ Image2D<unsigned char> loadImage2D(const std::filesystem::path& path) {
 Image2D<float> loadImage2Df(const std::filesystem::path& path) {
     Image2D<float> image;
     stbi_set_flip_vertically_on_load(true);
-    auto data = stbi_loadf(path.c_str(), &image.width, &image.height, &image.channels, STBI_rgb_alpha);
+    auto data = stbi_loadf(path.c_str(), &image.width, &image.height, &image.channels, 0);
+    if (!data) {
+        throw std::runtime_error("Failed to load image");
+    }
     image.data.reserve(image.width * image.height * image.channels);
     image.data.insert(image.data.end(), data, data + image.width * image.height * image.channels);
     return image;

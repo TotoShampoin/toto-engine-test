@@ -1,8 +1,6 @@
 #version 460 core
 
-in vec3 v_world_position;
 in vec3 v_view_position;
-in vec3 v_world_normal;
 in vec3 v_view_normal;
 in vec2 v_texcoord;
 
@@ -39,8 +37,8 @@ uniform mat4 u_projection;
 
 const float PI = 3.14159265359;
 
-vec3 fresnelSchlick(float NdotL, vec3 F0) {
-    return F0 + (1.0 - F0) * pow(clamp(1.0 - NdotL, 0.0, 1.0), 5.0);
+vec3 fresnelSchlick(float cosTheta, vec3 F0) {
+    return F0 + (1.0 - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
 }
 
 float DistributionGGX(vec3 N, vec3 H, float roughness) {
@@ -76,12 +74,7 @@ float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness) {
 
 void main() {
     vec3 normal = normalize(v_view_normal);
-    vec3 light_direction = mat3(u_view) * -u_light_direction;
-
     vec3 view_direction = normalize(-v_view_position);
-    vec3 half_direction = normalize(light_direction + view_direction);
-
-    float NdotL = max(dot(normal, light_direction), 0.0);
 
     vec3 albedo = u_albedo;
     float alpha = u_alpha;
@@ -104,27 +97,39 @@ void main() {
     if(u_use_ao_map) {
         ao = texture(u_ao_map, v_texcoord).r;
     }
+    if(u_use_normal_map) {
+        vec3 normal_map = texture(u_normal_map, v_texcoord).rgb;
+        normal_map = normalize(normal_map * 2.0 - 1.0);
+        // TODO: Implement tangent space normal mapping
+    }
 
     vec3 F0 = vec3(0.04);
     F0 = mix(F0, albedo, metallic);
-    vec3 F = fresnelSchlick(NdotL, F0);
 
-    float NDF = DistributionGGX(normal, half_direction, roughness);
-    float G = GeometrySmith(normal, view_direction, light_direction, roughness);
+    vec3 Lo = vec3(0.0);
+    {
+        vec3 light_direction = mat3(u_view) * -u_light_direction;
+        vec3 half_direction = normalize(light_direction + view_direction);
+        float HdotV = max(dot(half_direction, view_direction), 0.0);
+        float NDF = DistributionGGX(normal, half_direction, roughness);
+        float G = GeometrySmith(normal, view_direction, light_direction, roughness);
+        vec3 F = fresnelSchlick(HdotV, F0);
 
-    vec3 numerator = NDF * G * F;
-    float denominator = 4.0 * max(dot(normal, view_direction), 0.0) * max(dot(normal, light_direction), 0.0) + 0.0001;
-    vec3 specular = numerator / denominator;
+        vec3 kS = F;
+        vec3 kD = vec3(1.0) - kS;
+        kD *= 1.0 - metallic;
 
-    vec3 kS = F;
-    vec3 kD = vec3(1.0) - kS;
+        vec3 numerator = NDF * G * F;
+        float denominator = 4.0 * max(dot(normal, view_direction), 0.0) * max(dot(normal, light_direction), 0.0) + 0.0001;
+        vec3 specular = numerator / denominator;
 
-    kD *= 1.0 - metallic;
-
-    vec3 Lo = (kD * albedo / PI + specular) * u_light_color * NdotL;
+        float NdotL = max(dot(normal, light_direction), 0.0);
+        Lo += (kD * albedo / PI + specular) * u_light_color * NdotL;
+    }
 
     vec3 ambient = vec3(0.03) * albedo * ao;
     vec3 color = ambient + Lo;
+
     color = color / (color + vec3(1.0));
     color = pow(color, vec3(1.0 / 2.2));
 

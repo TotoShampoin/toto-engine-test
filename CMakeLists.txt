@@ -11,7 +11,7 @@ set(CMAKE_CXX_STANDARD 23)
 
 add_subdirectory(vendor/toto-engine)
 
-file(GLOB SOURCES ${SRC_DIR}/*.cpp)
+file(GLOB_RECURSE SOURCES ${SRC_DIR}/*.cpp)
 
 add_executable(cppgl ${SOURCES})
 

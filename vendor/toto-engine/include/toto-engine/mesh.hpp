@@ -45,4 +45,7 @@ struct Mesh {
     Material material;
 };
 
+std::string pbrMaterialVertexShader();
+std::string pbrMaterialFragmentShader();
+
 }; // namespace toto

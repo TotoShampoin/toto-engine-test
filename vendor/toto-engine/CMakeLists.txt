@@ -7,7 +7,7 @@ set(INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 set(CMAKE_CXX_STANDARD 23)
 
-file(GLOB SOURCES ${SRC_DIR}/*.cpp)
+file(GLOB_RECURSE SOURCES ${SRC_DIR}/*.cpp)
 
 find_package(glfw3 REQUIRED)
 find_package(OpenGL REQUIRED)

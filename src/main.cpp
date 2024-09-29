@@ -1,12 +1,12 @@
-#include "toto-engine/gl/glresources.hpp"
-#include "toto-engine/import-gl.hpp"
-#include "toto-engine/mesh.hpp"
-#include <glm/glm.hpp>
-#include <string>
-#include <sys/types.h>
 #include <toto-engine/gl/globjects.hpp>
+#include <toto-engine/gl/glresources.hpp>
+#include <toto-engine/import-gl.hpp>
+#include <toto-engine/mesh.hpp>
+#include <toto-engine/utils/shapes.hpp>
 #include <toto-engine/window.hpp>
-#include <vector>
+
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 
 using namespace toto;
 
@@ -16,60 +16,55 @@ int main(int argc, const char* argv[]) {
 
     Window::initGL();
 
-    std::vector<Vertex> vertices = {
-        {  {1.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
-        { {1.0f, -1.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 0.0f}},
-        {{-1.0f, -1.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f}},
-        { {-1.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}}
-    };
-    std::vector<uint> indices = {0, 1, 3, 1, 2, 3};
-
-    std::string vertex_shader_source = R"glsl(#version 460
-layout(location = 0) in vec3 position;
-layout(location = 1) in vec3 normal;
-layout(location = 2) in vec2 texcoord;
-
-out vec3 frag_normal;
-out vec2 frag_texcoord;
-
-void main() {
-    gl_Position = vec4(position, 1.0);
-    frag_normal = normal;
-    frag_texcoord = texcoord;
-})glsl";
-    std::string fragment_shader_source = R"glsl(#version 460
-in vec3 frag_normal;
-in vec2 frag_texcoord;
-
-out vec4 frag_color;
-
-void main() {
-    frag_color = vec4(frag_normal, 1.0);
-})glsl";
-
-    auto model = Model(vertices, indices);
+    // auto model = quad();
+    auto model = cube();
 
     auto vertex_shader = GLShader<GLShaderType::Vertex>();
-    vertex_shader.source(vertex_shader_source);
+    vertex_shader.source(pbrMaterialVertexShader());
     vertex_shader.compile();
 
     auto fragment_shader = GLShader<GLShaderType::Fragment>();
-    fragment_shader.source(fragment_shader_source);
+    fragment_shader.source(pbrMaterialFragmentShader());
     fragment_shader.compile();
 
     auto program = GLProgram();
     program.attachShaders(vertex_shader, fragment_shader);
     program.link();
+    program.use();
 
+    uint u_model = glGetUniformLocation(program.handle(), "u_model");
+    uint u_view = glGetUniformLocation(program.handle(), "u_view");
+    uint u_projection = glGetUniformLocation(program.handle(), "u_projection");
+
+    glm::mat4 model_matrix = glm::mat4(1.0f);
+    glm::mat4 view_matrix = glm::lookAt(glm::vec3(0.0f, 0.0f, 2.0f), glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    glm::mat4 projection_matrix = glm::perspective(glm::radians(45.0f), 800.0f / 600.0f, 0.1f, 100.0f);
+
+    glUniformMatrix4fv(u_model, 1, GL_FALSE, &model_matrix[0][0]);
+    glUniformMatrix4fv(u_view, 1, GL_FALSE, &view_matrix[0][0]);
+    glUniformMatrix4fv(u_projection, 1, GL_FALSE, &projection_matrix[0][0]);
+
+    glEnable(GL_DEPTH_TEST);
+
+    auto start = glfwGetTime();
+    auto last = start;
     while (!window.shouldClose()) {
-        glClear(GL_COLOR_BUFFER_BIT);
+        auto now = glfwGetTime();
+        auto time = now - start;
+        auto delta = now - last;
+
+        model_matrix = glm::rotate<float>(model_matrix, glm::radians(90.0f) * delta, glm::vec3(0.0f, 1.0f, 0.0f));
+        glUniformMatrix4fv(u_model, 1, GL_FALSE, &model_matrix[0][0]);
+
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         model.vbo.bind();
         program.use();
-        glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, nullptr);
+        glDrawElements(GL_TRIANGLES, model.index_count, GL_UNSIGNED_INT, nullptr);
 
         window.swapBuffers();
         window.pollEvents();
+        last = now;
     }
     return 0;
 }

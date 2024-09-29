@@ -40,6 +40,15 @@ Renderer::Renderer() {
 void Renderer::useProgram() {
     _program.use();
 }
+void Renderer::enableDepthTest() {
+    glEnable(GL_DEPTH_TEST);
+}
+void Renderer::disableDepthTest() {
+    glDisable(GL_DEPTH_TEST);
+}
+void Renderer::clear(bool color, bool depth) {
+    glClear((color ? GL_COLOR_BUFFER_BIT : 0) | (depth ? GL_DEPTH_BUFFER_BIT : 0));
+}
 
 void Renderer::setModelMatrix(const glm::mat4& model_matrix) {
     _uniforms["u_model"].set(model_matrix);
@@ -49,6 +58,15 @@ void Renderer::setViewMatrix(const glm::mat4& view_matrix) {
 }
 void Renderer::setProjectionMatrix(const glm::mat4& projection_matrix) {
     _uniforms["u_projection"].set(projection_matrix);
+}
+
+void Renderer::setTransform(const Transform& transform) {
+    setModelMatrix(transform.matrix());
+}
+
+void Renderer::setCamera(const Camera& camera) {
+    setViewMatrix(camera.viewMatrix());
+    setProjectionMatrix(camera.projectionMatrix());
 }
 
 void Renderer::setMaterial(const Material& material) {
@@ -65,19 +83,24 @@ void Renderer::setMaterial(const Material& material) {
     _setMap("normal", material.normal_map, 6);
 }
 
-void Renderer::setLight(const glm::vec3& direction, const float& intensity, const glm::vec3& color) {
-    _uniforms["u_light_direction"].set(direction);
-    _uniforms["u_light_intensity"].set(intensity);
-    _uniforms["u_light_color"].set(color);
+void Renderer::setLight(const Light& light) {
+    if (!light.isDirectional()) {
+        throw std::runtime_error("Only directional lights are supported for now");
+    }
+    _uniforms["u_light_direction"].set(light.direction());
+    _uniforms["u_light_intensity"].set(light.intensity());
+    _uniforms["u_light_color"].set(light.color());
 }
 
 void Renderer::render(const Model& model) {
     model.vbo.bind();
     glDrawElements(GL_TRIANGLES, model.index_count, GL_UNSIGNED_INT, nullptr);
 }
-void Renderer::render(const Mesh& mesh) {
-    setMaterial(mesh.material);
-    render(mesh.model);
+
+void Renderer::render(const Model& model, const Material& material, const Transform& transform) {
+    setTransform(transform);
+    setMaterial(material);
+    render(model);
 }
 
 void Renderer::_setMap(

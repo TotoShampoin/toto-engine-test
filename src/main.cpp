@@ -1,10 +1,11 @@
-#include "toto-engine/utils/renderer.hpp"
-#include <GLFW/glfw3.h>
 #include <toto-engine/gl/globjects.hpp>
 #include <toto-engine/gl/glresources.hpp>
 #include <toto-engine/import-gl.hpp>
 #include <toto-engine/mesh.hpp>
+#include <toto-engine/utils/light.hpp>
+#include <toto-engine/utils/renderer.hpp>
 #include <toto-engine/utils/shapes.hpp>
+#include <toto-engine/utils/transform.hpp>
 #include <toto-engine/window.hpp>
 
 #include <glm/glm.hpp>
@@ -22,7 +23,7 @@ int main(int argc, const char* argv[]) {
 
     Window::initGL();
 
-    Renderer renderer;
+    auto renderer = Renderer();
 
     renderer.useProgram();
 
@@ -33,33 +34,23 @@ int main(int argc, const char* argv[]) {
         .roughness = 0.25f,
         .ao = 0.05f,
     };
+    auto transform = Transform();
 
-    glm::mat4 model_matrix = glm::rotate(glm::mat4(1.0f), glm::radians(30.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-    glm::mat4 view_matrix = glm::lookAt(glm::vec3(4.0f, 4.0f, 4.0f), glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-    glm::mat4 projection_matrix = glm::perspective(glm::radians(45.0f), 800.0f / 600.0f, 0.1f, 100.0f);
+    auto camera = Camera::Perspective(glm::radians(45.0f), 800.0f / 600.0f, 0.1f, 100.0f);
 
-    glm::vec3 light_direction = glm::normalize(glm::vec3(1.0f, -1.0f, -1.0f));
-    glm::vec3 light_color = glm::vec3(1.0f, 1.0f, 1.0f);
-
-    renderer.setModelMatrix(model_matrix);
-    renderer.setViewMatrix(view_matrix);
-    renderer.setProjectionMatrix(projection_matrix);
-    renderer.setMaterial(material);
-    renderer.setLight(light_direction, 1.0f, light_color);
+    auto light = Light(glm::vec3(1.0f, 1.0f, 1.0f), 1.0f);
 
     struct UserData {
-        Renderer& renderer;
-    } data {renderer};
+        Camera& camera;
+    } data {camera};
     glfwSetWindowUserPointer(window.handle(), &data);
     glfwSetWindowSizeCallback(window.handle(), [](GLFWwindow* window, int width, int height) {
         auto& data = *static_cast<UserData*>(glfwGetWindowUserPointer(window));
-        data.renderer.setProjectionMatrix(
-            glm::perspective(glm::radians(45.0f), width / static_cast<float>(height), 0.1f, 100.0f)
-        );
+        data.camera.setPerspective(glm::radians(45.0f), width / static_cast<float>(height), 0.1f, 100.0f);
         glViewport(0, 0, width, height);
     });
 
-    glEnable(GL_DEPTH_TEST);
+    renderer.enableDepthTest();
 
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -76,20 +67,16 @@ int main(int argc, const char* argv[]) {
         auto time2 = time * 0.5f;
         auto time3 = -time * 0.5f;
 
-        model_matrix = glm::rotate<float>(glm::mat4(1.0f), time3, glm::vec3(1.0f, 0.0f, 0.0f));
-        light_direction = glm::normalize(glm::vec3(glm::cos(time2), glm::sin(time2), -1.0f));
-        view_matrix = glm::lookAt(
-            glm::vec3(4.0f * glm::cos(time), 2.0f, 4.0f * glm::sin(time)), glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f)
-        );
-        renderer.setModelMatrix(model_matrix);
-        renderer.setViewMatrix(view_matrix);
+        light.transform().rotation() = glm::vec3(0.0f, time2, 0.0f);
+        transform.rotation() = glm::vec3(time3, 0.0f, 0.0f);
+        camera.transform().position() = glm::vec3(4.0f * glm::cos(time), 2.0f, 4.0f * glm::sin(time));
+        camera.transform().lookAt(glm::vec3(0.0f));
+        renderer.setCamera(camera);
+        renderer.setLight(light);
 
-        renderer.setMaterial(material);
-        renderer.setLight(light_direction, 1.0f, light_color);
+        renderer.clear();
 
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-        renderer.render(model);
+        renderer.render(model, material, transform);
 
         //
 

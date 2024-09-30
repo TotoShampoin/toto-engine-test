@@ -27,7 +27,10 @@ struct Mesh {
 };
 
 int main(int argc, const char* argv[]) {
-    auto window = Window(800, 600, "Hello, World!");
+    int width = 800;
+    int height = 600;
+
+    auto window = Window(width, height, "Hello, World!");
     window.makeContextCurrent();
 
     Window::initGL();
@@ -58,20 +61,24 @@ int main(int argc, const char* argv[]) {
     std::vector<std::reference_wrapper<Mesh>> meshes {torus, cube};
     uint index = 0;
 
-    auto camera = Camera::Perspective(glm::radians(45.0f), 800.0f / 600.0f, 0.1f, 100.0f);
+    auto camera = Camera::Perspective(glm::radians(45.0f), (float)width / height, 0.1f, 100.0f);
 
     auto light = Light(glm::vec3(1.0f, 1.0f, 1.0f), 1.0f);
 
     struct UserData {
         Camera& camera;
         Renderer& renderer;
-    } data {camera, renderer};
+        int& width;
+        int& height;
+    } data {camera, renderer, width, height};
     glfwSetWindowUserPointer(window.handle(), &data);
     glfwSetWindowSizeCallback(window.handle(), [](GLFWwindow* window, int width, int height) {
         auto& data = *static_cast<UserData*>(glfwGetWindowUserPointer(window));
         data.camera.setPerspective(glm::radians(45.0f), width / static_cast<float>(height), 0.1f, 100.0f);
         data.renderer.setCamera(data.camera);
         data.renderer.setViewport(0, 0, width, height);
+        data.width = width;
+        data.height = height;
     });
 
     renderer.enableDepthTest();
@@ -81,7 +88,7 @@ int main(int argc, const char* argv[]) {
     camera.transform().position() = glm::vec3(4.0f, 3.0f, 4.0f);
     camera.transform().lookAt(glm::vec3(0.0f));
 
-    light.transform().position() = glm::normalize(glm::vec3(-1.0f, 1.0f, -1.0f));
+    light.transform().position() = glm::normalize(glm::vec3(-1.0f, 2.0f, -1.0f));
     light.transform().lookAt(glm::vec3(0.0f));
 
     renderer.setCamera(camera);
@@ -117,7 +124,18 @@ int main(int argc, const char* argv[]) {
 
         ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_Always);
         ImGui::Begin(
-            "Material", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_AlwaysAutoResize
+            "Benchmark", nullptr,
+            ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_AlwaysAutoResize |
+                ImGuiWindowFlags_NoFocusOnAppearing
+        );
+        ImGui::Text("FPS: %.1f", 1.0f / delta);
+        ImGui::End();
+
+        ImGui::SetNextWindowPos(ImVec2(width, 0), ImGuiCond_Always, ImVec2(1.0f, 0.0f));
+        ImGui::Begin(
+            "Material", nullptr,
+            ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_AlwaysAutoResize |
+                ImGuiWindowFlags_NoFocusOnAppearing
         );
 
         ImGui::InputInt("Mesh", reinterpret_cast<int*>(&index));
@@ -130,7 +148,6 @@ int main(int argc, const char* argv[]) {
         ImGui::SliderFloat("Roughness", &meshes[index].get().material.roughness, 0.0f, 1.0f);
         ImGui::SliderFloat("Metallic", &meshes[index].get().material.metallic, 0.0f, 1.0f);
         ImGui::SliderFloat("AO", &meshes[index].get().material.ao, 0.0f, 1.0f);
-
         ImGui::End();
 
         ImGui::Render();

@@ -1,3 +1,5 @@
+#include "toto-engine/loader/shader.hpp"
+#include "toto-engine/utils/deferred_renderer.hpp"
 #include <functional>
 #include <glm/ext/quaternion_geometric.hpp>
 #include <toto-engine/gl/globjects.hpp>
@@ -35,9 +37,7 @@ int main(int argc, const char* argv[]) {
 
     Window::initGL();
 
-    auto renderer = Renderer();
-
-    renderer.useProgram();
+    auto renderer = DeferredRenderer(width, height);
 
     Mesh torus = {
         shape::torus(1, .33333333, 96, 32),
@@ -67,7 +67,7 @@ int main(int argc, const char* argv[]) {
 
     struct UserData {
         Camera& camera;
-        Renderer& renderer;
+        DeferredRenderer& renderer;
         int& width;
         int& height;
     } data {camera, renderer, width, height};
@@ -81,6 +81,7 @@ int main(int argc, const char* argv[]) {
         data.height = height;
     });
 
+    renderer.useDeferredProgram();
     renderer.enableDepthTest();
 
     cube.transform.position() = glm::vec3(-2.0f, 0.0f, 1.0f);
@@ -111,12 +112,11 @@ int main(int argc, const char* argv[]) {
         torus.transform.rotation() = glm::vec3(0.0f, 0.0f, time);
         cube.transform.rotation() = glm::vec3(time2);
 
+        renderer.beginRender();
         renderer.clear();
-
-        renderer.render(torus.model, torus.material, torus.transform);
-        renderer.render(cube.model, cube.material, cube.transform);
-
-        //
+        renderer.draw(torus.model, torus.material, torus.transform);
+        renderer.draw(cube.model, cube.material, cube.transform);
+        renderer.endRender();
 
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();

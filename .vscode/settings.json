@@ -1,0 +1,10 @@
+{
+  "emeraldwalk.runonsave": {
+    "commands": [
+      {
+        "match": "vendor/toto-engine/embed/.*",
+        "cmd": "cd vendor/toto-engine && python tools/embed-convert.py"
+      }
+    ]
+  }
+}

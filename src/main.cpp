@@ -1,4 +1,3 @@
-#include "toto-engine/loader/shader.hpp"
 #include "toto-engine/utils/deferred_renderer.hpp"
 #include <functional>
 #include <glm/ext/quaternion_geometric.hpp>

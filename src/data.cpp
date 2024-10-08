@@ -39,10 +39,12 @@ void EventData::setCallbacks() {
         if (button == GLFW_MOUSE_BUTTON_LEFT) {
             data->mouse_left = action != GLFW_RELEASE;
             data->mouse_left_pressed = action == GLFW_PRESS;
+            data->mouse_left_released = action == GLFW_RELEASE;
         }
         if (button == GLFW_MOUSE_BUTTON_RIGHT) {
             data->mouse_right = action != GLFW_RELEASE;
             data->mouse_right_pressed = action == GLFW_PRESS;
+            data->mouse_right_released = action == GLFW_RELEASE;
         }
     });
     glfwSetCursorPosCallback(window.handle(), [](GLFWwindow* window, double xpos, double ypos) {

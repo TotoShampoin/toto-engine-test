@@ -19,6 +19,7 @@ struct EventData {
     bool left = false, right = false, up = false, down = false;
     bool mouse_left = false, mouse_right = false;
     bool mouse_left_pressed = false, mouse_right_pressed = false;
+    bool mouse_left_released = false, mouse_right_released = false;
     bool escape_pressed = false;
     glm::vec2 mouse_position;
     glm::vec2 mouse_last_position;

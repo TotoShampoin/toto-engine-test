@@ -61,11 +61,9 @@ int main(int argc, const char* argv[]) {
 
     auto camera = Camera::Perspective(glm::radians(camera_fov), (float)width / height, 0.1f, 100.0f);
 
-    auto light = Light(glm::vec3(1.0f, 1.0f, 1.0f), 1.0f);
-
     auto skybox = Skybox(
-        generateTexture2D(
-            loadImage2Df("res/zwartkops_curve_morning_4k.hdr"),
+        loadTexture2Df(
+            "res/zwartkops_curve_morning_4k.hdr",
             {
                 .wrap_s = GL_CLAMP_TO_EDGE,
                 .wrap_t = GL_CLAMP_TO_EDGE,
@@ -75,6 +73,8 @@ int main(int argc, const char* argv[]) {
         ),
         1024
     );
+
+    auto light = Light(glm::vec3(1.0f, 1.0f, 1.0f), 1.0f);
 
     bool is_locked = false;
     bool imgui_has_focus = false;
@@ -118,7 +118,7 @@ int main(int argc, const char* argv[]) {
             glfwSetInputMode(window.handle(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
             is_locked = true;
         }
-        if (event_data.escape_pressed && is_locked) {
+        if (event_data.mouse_left_released && is_locked) {
             glfwSetInputMode(window.handle(), GLFW_CURSOR, GLFW_CURSOR_NORMAL);
             is_locked = false;
         }
@@ -128,13 +128,17 @@ int main(int argc, const char* argv[]) {
         event_data.update();
 
         if (is_locked) {
-            camera_angles += glm::vec2(delta * axis.y, delta * axis.x);
+            camera_angles += glm::vec2(delta * axis.x, delta * axis.y);
+            if (camera_angles.y > glm::pi<float>() / 2.0f)
+                camera_angles.y = glm::pi<float>() / 2.0f - 0.0001f;
+            if (camera_angles.y < -glm::pi<float>() / 2.0f)
+                camera_angles.y = -glm::pi<float>() / 2.0f + 0.0001f;
         }
 
         camera.transform().position() = glm::vec3(                          //
-            5.0f * glm::cos(camera_angles[1]) * glm::cos(camera_angles[0]), //
-            5.0f * glm::sin(camera_angles[0]),                              //
-            5.0f * glm::sin(camera_angles[1]) * glm::cos(camera_angles[0])  //
+            5.0f * glm::cos(camera_angles[0]) * glm::cos(camera_angles[1]), //
+            5.0f * glm::sin(camera_angles[1]),                              //
+            5.0f * glm::sin(camera_angles[0]) * glm::cos(camera_angles[1])  //
         );
         camera.lookAt(glm::vec3(0.0f));
 

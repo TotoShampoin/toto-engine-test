@@ -15,8 +15,24 @@ struct EventData {
     int& width;
     int& height;
     toto::Camera& camera;
+    bool left = false, right = false, up = false, down = false;
+    bool mouse_left = false, mouse_right = false;
+    bool mouse_left_pressed = false, mouse_right_pressed = false;
+    bool escape_pressed = false;
+    glm::vec2 mouse_position;
+    glm::vec2 mouse_last_position;
 
     void setCallbacks();
+
+    glm::vec2 getAxis() const { return glm::vec2(right - left, up - down); }
+    glm::vec2 getMouseDelta() const { return mouse_position - mouse_last_position; }
+
+    void update() {
+        mouse_last_position = mouse_position;
+        mouse_left_pressed = false;
+        mouse_right_pressed = false;
+        escape_pressed = false;
+    }
 };
 
 struct ImGuiData {

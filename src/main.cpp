@@ -57,27 +57,31 @@ int main(int argc, const char* argv[]) {
     std::vector<std::reference_wrapper<Mesh>> meshes {torus, cube};
     uint index = 0;
 
-    auto camera = Camera::Perspective(glm::radians(75.0f), (float)width / height, 0.1f, 100.0f);
+    float camera_fov = 75.0f;
+
+    auto camera = Camera::Perspective(glm::radians(camera_fov), (float)width / height, 0.1f, 100.0f);
 
     auto light = Light(glm::vec3(1.0f, 1.0f, 1.0f), 1.0f);
 
-    auto skybox = Skybox(generateTexture2D(
-        // loadImage2Df("res/zwartkops_curve_morning_4k.hdr"),
-        loadImage2Df("res/klippad_sunrise_2_4k.hdr"),
-        {
-            .wrap_s = GL_CLAMP_TO_EDGE,
-            .wrap_t = GL_CLAMP_TO_EDGE,
-            .min_filter = GL_LINEAR,
-            .mag_filter = GL_LINEAR,
-        }
-    ));
+    auto skybox = Skybox(
+        generateTexture2D(
+            loadImage2Df("res/zwartkops_curve_morning_4k.hdr"),
+            {
+                .wrap_s = GL_CLAMP_TO_EDGE,
+                .wrap_t = GL_CLAMP_TO_EDGE,
+                .min_filter = GL_LINEAR,
+                .mag_filter = GL_LINEAR,
+            }
+        ),
+        1024
+    );
 
     bool is_locked = false;
     bool imgui_has_focus = false;
 
     glm::vec2 camera_angles = glm::vec2(0.0f);
 
-    EventData event_data {window, renderer, width, height, camera};
+    EventData event_data {window, renderer, width, height, camera, camera_fov};
     ImGuiData imgui_data {index, width, meshes};
     event_data.setCallbacks();
     initImGui(window);
@@ -93,8 +97,10 @@ int main(int argc, const char* argv[]) {
     light.transform().position() = glm::normalize(glm::vec3(-1.0f, 2.0f, -1.0f));
     light.transform().lookAt(glm::vec3(0.0f));
 
+    renderer.setViewport(0, 0, width, height);
     renderer.setCamera(camera);
     renderer.setLight(light);
+    renderer.setSkybox(skybox);
 
     auto start = glfwGetTime();
     auto last = start;
@@ -105,10 +111,8 @@ int main(int argc, const char* argv[]) {
 
         auto time2 = time * 0.5f;
 
-        // torus.transform.rotation() = glm::vec3(0.0f, 0.0f, time);
-        // cube.transform.rotation() = glm::vec3(time2);
-
-        // auto axis = event_data.getAxis() * glm::vec2(-1, 1);
+        torus.transform.rotation() = glm::vec3(0.0f, 0.0f, time);
+        cube.transform.rotation() = glm::vec3(time2);
 
         if (event_data.mouse_left_pressed && !is_locked && !ImGui::GetIO().WantCaptureMouse) {
             glfwSetInputMode(window.handle(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
@@ -133,8 +137,6 @@ int main(int argc, const char* argv[]) {
             5.0f * glm::sin(camera_angles[1]) * glm::cos(camera_angles[0])  //
         );
         camera.lookAt(glm::vec3(0.0f));
-
-        renderer.setViewport(0, 0, width, height);
 
         renderer.setCamera(camera);
 

@@ -10,7 +10,7 @@ void EventData::setCallbacks() {
     glfwSetWindowUserPointer(window.handle(), this);
     glfwSetFramebufferSizeCallback(window.handle(), [](GLFWwindow* window, int width, int height) {
         auto data = static_cast<EventData*>(glfwGetWindowUserPointer(window));
-        data->camera.setPerspective(glm::radians(45.0f), width / static_cast<float>(height), 0.1f, 100.0f);
+        data->camera.setPerspective(glm::radians(data->camera_fov), width / static_cast<float>(height), 0.1f, 100.0f);
         data->renderer.setCamera(data->camera);
         data->renderer.setViewport(0, 0, width, height);
         data->width = width;

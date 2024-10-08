@@ -15,6 +15,7 @@ struct EventData {
     int& width;
     int& height;
     toto::Camera& camera;
+    float& camera_fov;
     bool left = false, right = false, up = false, down = false;
     bool mouse_left = false, mouse_right = false;
     bool mouse_left_pressed = false, mouse_right_pressed = false;

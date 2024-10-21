@@ -41,7 +41,8 @@ int main(int argc, const char* argv[]) {
                   .albedo = glm::vec3(1.0f, 0.5f, 0.0f),
                   .metallic = 1.0f,
                   .roughness = 0.25f,
-                  .ao = 0.05f,
+                  .ao = 1.0f,
+                  .name = "Gold",
                   },
     };
     Mesh cube = {
@@ -51,6 +52,7 @@ int main(int argc, const char* argv[]) {
                   .metallic = 0.0f,
                   .roughness = 0.5f,
                   .ao = 1.0f,
+                  .name = "Plastic",
                   },
     };
 
@@ -59,7 +61,7 @@ int main(int argc, const char* argv[]) {
 
     float camera_fov = 75.0f;
 
-    auto camera = Camera::Perspective(glm::radians(camera_fov), (float)width / height, 0.1f, 100.0f);
+    auto camera = Camera::Perspective(glm::radians(camera_fov), (float)width / height, 0.1f, 10.0f);
 
     auto skybox = Skybox(
         loadTexture2Df(
@@ -99,7 +101,7 @@ int main(int argc, const char* argv[]) {
 
     renderer.setViewport(0, 0, width, height);
     renderer.setCamera(camera);
-    renderer.setLight(light);
+    // renderer.setLight(light);
     renderer.setSkybox(skybox);
 
     auto start = glfwGetTime();
@@ -128,7 +130,7 @@ int main(int argc, const char* argv[]) {
         event_data.update();
 
         if (is_locked) {
-            camera_angles += glm::vec2(delta * axis.x, delta * axis.y);
+            camera_angles += glm::vec2(delta * axis.x, delta * axis.y) / 2.0f;
             if (camera_angles.y > glm::pi<float>() / 2.0f)
                 camera_angles.y = glm::pi<float>() / 2.0f - 0.0001f;
             if (camera_angles.y < -glm::pi<float>() / 2.0f)
@@ -150,7 +152,6 @@ int main(int argc, const char* argv[]) {
         skybox.render(camera);
 
         renderer.beginRender();
-        renderer.clear();
         renderer.draw(torus.model, torus.material, torus.transform);
         renderer.draw(cube.model, cube.material, cube.transform);
         renderer.endRender();

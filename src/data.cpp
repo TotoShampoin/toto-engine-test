@@ -1,4 +1,5 @@
 #include "data.hpp"
+#include "toto-engine/gl/gldebug.hpp"
 #include "toto-engine/window.hpp"
 #include <GLFW/glfw3.h>
 
@@ -10,7 +11,7 @@ void EventData::setCallbacks() {
     glfwSetWindowUserPointer(window.handle(), this);
     glfwSetFramebufferSizeCallback(window.handle(), [](GLFWwindow* window, int width, int height) {
         auto data = static_cast<EventData*>(glfwGetWindowUserPointer(window));
-        data->camera.setPerspective(glm::radians(data->camera_fov), width / static_cast<float>(height), 0.1f, 100.0f);
+        data->camera.setPerspective(glm::radians(data->camera_fov), width / static_cast<float>(height), 0.1f, 10.0f);
         data->renderer.setCamera(data->camera);
         data->renderer.setViewport(0, 0, width, height);
         data->width = width;
@@ -61,6 +62,8 @@ void initImGui(const toto::Window& window) {
 }
 
 void drawImGui(ImGuiData& data, double delta) {
+    toto::GLDebug::pushGroup("Draw ImGui");
+
     auto [index, width, meshes] = data;
 
     ImGui_ImplOpenGL3_NewFrame();
@@ -97,4 +100,6 @@ void drawImGui(ImGuiData& data, double delta) {
 
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+    toto::GLDebug::popGroup();
 }

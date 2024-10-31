@@ -9,49 +9,44 @@
 #include <imgui.h>
 
 void EventData::setCallbacks() {
-    glfwSetWindowUserPointer(window.handle(), this);
-    glfwSetFramebufferSizeCallback(window.handle(), [](GLFWwindow* window, int width, int height) {
-        auto data = static_cast<EventData*>(glfwGetWindowUserPointer(window));
-        data->camera.setPerspective(glm::radians(data->camera_fov), width / static_cast<float>(height), 0.1f, 10.0f);
-        data->renderer.setCamera(data->camera);
-        data->renderer.setViewport(0, 0, width, height);
-        data->width = width;
-        data->height = height;
+    window.events().onFramebufferResize([this](int width, int height) {
+        camera.setPerspective(glm::radians(camera_fov), width / static_cast<float>(height), 0.1f, 10.0f);
+        renderer.setCamera(camera);
+        renderer.setViewport(0, 0, width, height);
+        this->width = width;
+        this->height = height;
     });
-    glfwSetKeyCallback(window.handle(), [](GLFWwindow* window, int key, int scancode, int action, int mods) {
-        auto data = static_cast<EventData*>(glfwGetWindowUserPointer(window));
+    window.events().onKey([this](int key, int scancode, int action, int mods) {
         if (key == GLFW_KEY_W) {
-            data->up = action != GLFW_RELEASE;
+            up = action != GLFW_RELEASE;
         }
         if (key == GLFW_KEY_S) {
-            data->down = action != GLFW_RELEASE;
+            down = action != GLFW_RELEASE;
         }
         if (key == GLFW_KEY_A) {
-            data->left = action != GLFW_RELEASE;
+            left = action != GLFW_RELEASE;
         }
         if (key == GLFW_KEY_D) {
-            data->right = action != GLFW_RELEASE;
+            right = action != GLFW_RELEASE;
         }
         if (key == GLFW_KEY_ESCAPE) {
-            data->escape_pressed = action == GLFW_PRESS;
+            escape_pressed = action == GLFW_PRESS;
         }
     });
-    glfwSetMouseButtonCallback(window.handle(), [](GLFWwindow* window, int button, int action, int mods) {
-        auto data = static_cast<EventData*>(glfwGetWindowUserPointer(window));
+    window.events().onMouseButton([this](int button, int action, int mods, int count) {
         if (button == GLFW_MOUSE_BUTTON_LEFT) {
-            data->mouse_left = action != GLFW_RELEASE;
-            data->mouse_left_pressed = action == GLFW_PRESS;
-            data->mouse_left_released = action == GLFW_RELEASE;
+            mouse_left = action != GLFW_RELEASE;
+            mouse_left_pressed = action == GLFW_PRESS;
+            mouse_left_released = action == GLFW_RELEASE;
         }
         if (button == GLFW_MOUSE_BUTTON_RIGHT) {
-            data->mouse_right = action != GLFW_RELEASE;
-            data->mouse_right_pressed = action == GLFW_PRESS;
-            data->mouse_right_released = action == GLFW_RELEASE;
+            mouse_right = action != GLFW_RELEASE;
+            mouse_right_pressed = action == GLFW_PRESS;
+            mouse_right_released = action == GLFW_RELEASE;
         }
     });
-    glfwSetCursorPosCallback(window.handle(), [](GLFWwindow* window, double xpos, double ypos) {
-        auto data = static_cast<EventData*>(glfwGetWindowUserPointer(window));
-        data->mouse_position = glm::vec2(xpos, ypos);
+    window.events().onCursorPosition([this](double xpos, double ypos) { //
+        mouse_position = glm::vec2(xpos, ypos);
     });
 }
 

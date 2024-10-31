@@ -35,8 +35,18 @@ int main(int argc, const char* argv[]) {
 
     auto renderer = DeferredRenderer(width, height);
 
-    Mesh torus = {
-        shape::torus(1, .33333333, 96, 32),
+    // Mesh torus = {
+    //     shape::torus(1, .33333333, 96, 32),
+    //     Material {
+    //               .albedo = glm::vec3(1.0f, 0.5f, 0.0f),
+    //               .metallic = 1.0f,
+    //               .roughness = 0.25f,
+    //               .ao = 1.0f,
+    //               .name = "Gold",
+    //               },
+    // };
+    Mesh sphere = {
+        shape::sphere(1.0f, 32, 32),
         Material {
                   .albedo = glm::vec3(1.0f, 0.5f, 0.0f),
                   .metallic = 1.0f,
@@ -56,7 +66,8 @@ int main(int argc, const char* argv[]) {
                   },
     };
 
-    std::vector<std::reference_wrapper<Mesh>> meshes {torus, cube};
+    // std::vector<std::reference_wrapper<Mesh>> meshes {torus, cube};
+    std::vector<std::reference_wrapper<Mesh>> meshes {sphere, cube};
     uint index = 0;
 
     float camera_fov = 75.0f;
@@ -65,7 +76,9 @@ int main(int argc, const char* argv[]) {
 
     auto skybox = Skybox(
         loadTexture2Df(
-            "res/zwartkops_curve_morning_4k.hdr",
+            // "res/zwartkops_curve_morning_4k.hdr",
+            // "res/klippad_sunrise_2_4k.hdr",
+            "res/goegap_road_4k.hdr",
             {
                 .wrap_s = GL_CLAMP_TO_EDGE,
                 .wrap_t = GL_CLAMP_TO_EDGE,
@@ -80,11 +93,12 @@ int main(int argc, const char* argv[]) {
 
     bool is_locked = false;
     bool imgui_has_focus = false;
+    float exposure = 1.0f;
 
     glm::vec2 camera_angles = glm::vec2(0.0f);
 
     EventData event_data {window, renderer, width, height, camera, camera_fov};
-    ImGuiData imgui_data {index, width, meshes};
+    ImGuiData imgui_data {index, width, meshes, exposure};
     event_data.setCallbacks();
     initImGui(window);
 
@@ -103,6 +117,7 @@ int main(int argc, const char* argv[]) {
     renderer.setCamera(camera);
     // renderer.setLight(light);
     renderer.setSkybox(skybox);
+    renderer.setExposure(exposure);
 
     auto start = glfwGetTime();
     auto last = start;
@@ -113,8 +128,8 @@ int main(int argc, const char* argv[]) {
 
         auto time2 = time * 0.5f;
 
-        torus.transform.rotation() = glm::vec3(0.0f, 0.0f, time);
-        cube.transform.rotation() = glm::vec3(time2);
+        // torus.transform.rotation() = glm::vec3(0.0f, 0.0f, time);
+        // cube.transform.rotation() = glm::vec3(time2);
 
         if (event_data.mouse_left_pressed && !is_locked && !ImGui::GetIO().WantCaptureMouse) {
             glfwSetInputMode(window.handle(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
@@ -144,7 +159,10 @@ int main(int argc, const char* argv[]) {
         );
         camera.lookAt(glm::vec3(0.0f));
 
+        skybox.applyExposure(exposure);
+
         renderer.setCamera(camera);
+        renderer.setExposure(exposure);
 
         renderer.unbindGBuffer();
 
@@ -152,8 +170,9 @@ int main(int argc, const char* argv[]) {
         skybox.render(camera);
 
         renderer.beginRender();
-        renderer.draw(torus.model, torus.material, torus.transform);
-        renderer.draw(cube.model, cube.material, cube.transform);
+        for (auto& mesh : meshes) {
+            renderer.draw(mesh.get().model, mesh.get().material, mesh.get().transform);
+        }
         renderer.endRender();
 
         drawImGui(imgui_data, delta);

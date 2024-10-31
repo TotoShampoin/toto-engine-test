@@ -41,6 +41,7 @@ struct ImGuiData {
     uint& index;
     int& width;
     std::vector<std::reference_wrapper<Mesh>>& meshes;
+    float& exposure;
 };
 
 void initImGui(const toto::Window& window);

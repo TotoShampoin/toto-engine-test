@@ -3,6 +3,7 @@
 #include "toto-engine/window.hpp"
 #include <GLFW/glfw3.h>
 
+#include <algorithm>
 #include <backends/imgui_impl_glfw.h>
 #include <backends/imgui_impl_opengl3.h>
 #include <imgui.h>
@@ -64,7 +65,13 @@ void initImGui(const toto::Window& window) {
 void drawImGui(ImGuiData& data, double delta) {
     toto::GLDebug::pushGroup("Draw ImGui");
 
-    auto [index, width, meshes] = data;
+    auto [index, width, meshes, exposure] = data;
+
+    static float prev_max_width = 0;
+    static float prev_max_height = 0;
+
+    float max_width = 0;
+    float max_height = 0;
 
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
@@ -81,11 +88,12 @@ void drawImGui(ImGuiData& data, double delta) {
 
     ImGui::SetNextWindowPos(ImVec2(width, 0), ImGuiCond_Always, ImVec2(1.0f, 0.0f));
     ImGui::Begin(
-        "Material", nullptr,
+        "Menu", nullptr,
         ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_AlwaysAutoResize |
             ImGuiWindowFlags_NoFocusOnAppearing
     );
-
+    ImGui::BeginGroup();
+    ImGui::Text("Material");
     ImGui::InputInt("Mesh", reinterpret_cast<int*>(&index));
     if (index < 0) {
         index = 0;
@@ -96,10 +104,20 @@ void drawImGui(ImGuiData& data, double delta) {
     ImGui::SliderFloat("Roughness", &meshes[index].get().material.roughness, 0.0f, 1.0f);
     ImGui::SliderFloat("Metallic", &meshes[index].get().material.metallic, 0.0f, 1.0f);
     ImGui::SliderFloat("AO", &meshes[index].get().material.ao, 0.0f, 1.0f);
+    ImGui::EndGroup();
+    ImGui::BeginGroup();
+    ImGui::Text("Renderer");
+    ImGui::SliderFloat("Exposure", &exposure, 0.0f, 3.0f);
+    ImGui::EndGroup();
     ImGui::End();
+    max_width = std::max(max_width, ImGui::GetWindowWidth());
+    max_height = std::max(max_height, ImGui::GetWindowHeight());
 
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+    prev_max_width = max_width;
+    prev_max_height = max_height;
 
     toto::GLDebug::popGroup();
 }
